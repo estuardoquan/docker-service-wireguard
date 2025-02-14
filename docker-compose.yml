@@ -1,0 +1,43 @@
+networks:
+    ipvlan:
+        external: true
+        name: ipvlan_network
+services:
+    vpn:
+        image: ghcr.io/wg-easy/wg-easy:latest
+        environment:
+            LANG: en
+            WG_HOST: $VPN_WG_HOST
+            PASSWORD_HASH: $VPN_PASSWORD_HASH
+            WG_DEFAULT_DNS: $VPN_WG_DEFAULT_DNS
+        volumes:
+            - ./src:/etc/wireguard
+        networks:
+            ipvlan:
+                ipv4_address: $VPN_IPVLAN
+        ports:
+            - "51820:51820/udp"
+        sysctls:
+            - net.ipv4.ip_forward=1
+            - net.ipv4.conf.all.src_valid_mark=1
+        cap_add:
+            - NET_ADMIN
+            - SYS_MODULE
+        restart: unless-stopped
+    servers:
+        image: dqio/servers:latest
+        environment:
+            SERVER_YAML: /etc/nginx/yaml/servers.yaml
+            SERVER_WATCH_CRT: /var/local/step/site.crt
+        volumes:
+            - $SERVER_CRT_PATH:/var/local/step:ro
+            - ./servers.yaml:/etc/nginx/yaml/servers.yaml
+        networks:
+            ipvlan:
+                ipv4_address: $SERVER_IPVLAN_ADDRESS
+        ports:
+            - 80
+            - 443
+        depends_on:
+            - vpn
+        restart: unless-stopped

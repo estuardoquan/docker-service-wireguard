@@ -1,0 +1,10 @@
+- server:
+      port: 443
+      domain:
+        subject: www.wireguard.local
+      https: /var/local/step
+      log: /var/log/nginx
+      locations:
+          - type: proxy_pass
+            value: http://vpn:51821
+            include: /etc/nginx/includes/default.proxy.conf
