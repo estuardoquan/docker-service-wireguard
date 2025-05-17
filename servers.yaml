@@ -8,3 +8,4 @@
           - type: proxy_pass
             value: http://vpn:51821
             include: /etc/nginx/includes/default.proxy.conf
+      redirect: 80

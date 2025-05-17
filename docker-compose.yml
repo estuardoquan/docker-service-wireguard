@@ -1,8 +1,34 @@
 networks:
+    ca:
+        external: true
+        name: step_ca_network
     ipvlan:
         external: true
         name: ipvlan_network
+volumes:
+    step:
+        driver: local
+secrets:
+    provisioner_password:
+        file: $PROVISIONER_PASSWORD_FILE
 services:
+    crt:
+        image: dqio/crtpatch:latest
+        environment:
+            STEP_INIT_NAME: $CRT_STEP_INIT_NAME
+            STEP_INIT_DNS: $CRT_STEP_INIT_DNS
+            STEP_CA_URL: $CRT_STEP_CA_URL
+            STEP_FINGERPRINT: $CRT_STEP_FINGERPRINT
+            STEP_KID: $CRT_STEP_KID
+            STEP_RENEW_PERIOD: $CRT_STEP_RENEW_PERIOD
+            STEP_PROVISIONER_PASSWORD_FILE: /run/secrets/provisioner_password
+        volumes:
+            - step:/var/local/step
+        secrets:
+            - provisioner_password
+        networks:
+            - ca
+        restart: unless-stopped
     vpn:
         image: ghcr.io/wg-easy/wg-easy:latest
         environment:
@@ -30,7 +56,7 @@ services:
             SERVER_YAML: /etc/nginx/yaml/servers.yaml
             SERVER_WATCH_CRT: /var/local/step/site.crt
         volumes:
-            - $SERVER_CRT_PATH:/var/local/step:ro
+            - step:/var/local/step:ro
             - ./servers.yaml:/etc/nginx/yaml/servers.yaml
         networks:
             ipvlan:
